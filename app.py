@@ -286,7 +286,6 @@ def explainerGUI(): #Tells the User what has happened outputting when the PDF ha
 
     # starts the mainloop
     topframe.mainloop()
-print("Hello world")
 
 pdfFinderGUI()
 patient_number_entry()
