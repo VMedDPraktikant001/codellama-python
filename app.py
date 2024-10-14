@@ -15,6 +15,7 @@ from tkinter import *
 from tkinter import ttk
 import pandas as pd
 import pdfplumber
+from time import sleep
 
 #defines global variables including the first line, empty lists to contain each CSV column and, the first line of the csv and working directory
 firstline = ["Timestamp", "Heartrate", "Breathingrate"]
@@ -26,74 +27,80 @@ datelist = []
 
 print("Software Version: 1.8")
 
-def csv_reformat(): #Creates a temporary CSV (firstcsv.csv) and then outputs the final CSV named "date" "patientnumber
+def csv_reformat() -> None:  #Creates a temporary CSV (firstcsv.csv) and then outputs the final CSV named "date" "patientnumber
     #opens the pdf and then creates a csv called first csv (firstcsv.csv) using pdfplumber module, this csv is temporary and still in the same format as the pdf
-    lines = []
-    for item in pdfdirlist:
-        with pdfplumber.open(item) as pdf:
-            pages = pdf.pages
-            for page in pdf.pages:
-                text = page.extract_text()
-                # text = text.replace(" ", ", ")
-                for line in text.split('\n'):
-                    line = line.split()
-                    lines.append(line)
-                    print(line)
-    df = pd.DataFrame(lines)
-    df.to_csv('firstcsv.csv')
+    try:
+        lines = []
+        for item in pdfdirlist:
+            with pdfplumber.open(item) as pdf:
+                pages = pdf.pages
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    # text = text.replace(" ", ", ")
+                    for line in text.split('\n'):
+                        line = line.split()
+                        lines.append(line)
+                        #print(line)
+        df = pd.DataFrame(lines)
+        df.to_csv('firstcsv.csv')
 
-    # defines location of the temporary csv and sets time_list to global
-    global time_list
-    csvlocation = workingdir + r"\firstcsv.csv"
-    #opens the temporary csv (firstcsv.csv) and creates a variable called reader, this variable contains the entire temporary csv line for line
-    f = open(csvlocation, encoding="utf-8")
-    reader = csv.reader(f, delimiter=",")
-    startzeit_rememberer_happened = False
-    #goes through each line in the csv and runs the associated appender or other function
-    for line in reader:
-            line = line[1:]
-            if (linedeterminer(line) == "Startzeit line"):
-                startzeit_rememberer(line)
-            if linedeterminer(line) == "Time line":
-                time_list_appender(line)
-            if linedeterminer(line) == "HF line":
-                heartrate_list_appender(line)
-            if linedeterminer(line) == "AF line":
-                breathingrate_list_appender(line)
-    f.close()
-    #opens and creates a new final csv named using the date and patientnumber
-    with open(f"{targetdir}\\Pat_{patientnumbersaved}_{sorted(datelist)[0]}.csv", "w", newline = "", errors="ignore") as csvfile:
-    #debugging prints lists and lengths of lists
-        print("opened")
-        print(time_list)
-        print(heartrate_list)
-        print(breathingrate_list)
-        print(len(time_list))
-        print(len(heartrate_list))
-        print(len(breathingrate_list))
-        # creates a count used to write into the new csv and writes the firstline containing the header then writes the other lines, closes the final csv and removes temporary csv
-        count = (len(heartrate_list) - 1)
-        for item in firstline:
-            csvfile.write(item+"; ")
-        csvfile.write("\n")
-        finallist = []
-        count = 0
-        for item in time_list:
-            finallist.append(item + "; " + heartrate_list[count] + "; " + breathingrate_list[count])
-            count += 1
-        finallist = sorted(finallist)
-        for item in finallist:
-            csvfile.write(item)
+        # defines location of the temporary csv and sets time_list to global
+        global time_list
+        csvlocation = workingdir + r"\firstcsv.csv"
+        #opens the temporary csv (firstcsv.csv) and creates a variable called reader, this variable contains the entire temporary csv line for line
+        f = open(csvlocation, encoding="utf-8")
+        reader = csv.reader(f, delimiter=",")
+        startzeit_rememberer_happened = False
+        #goes through each line in the csv and runs the associated appender or other function
+        for line in reader:
+                line = line[1:]
+                if (linedeterminer(line) == "Startzeit line"):
+                    startzeit_rememberer(line)
+                if linedeterminer(line) == "Time line":
+                    time_list_appender(line)
+                if linedeterminer(line) == "HF line":
+                    heartrate_list_appender(line)
+                if linedeterminer(line) == "AF line":
+                    breathingrate_list_appender(line)
+        f.close()
+        #opens and creates a new final csv named using the date and patientnumber
+        with open(f"{targetdir}\\Pat_{patientnumbersaved}_{sorted(datelist)[0]}.csv", "w", newline = "", errors="ignore") as csvfile:
+        #debugging prints lists and lengths of lists
+            #print("opened")
+            #print(time_list)
+            #print(heartrate_list)
+            #print(breathingrate_list)
+            #print(len(time_list))
+            #print(len(heartrate_list))
+            #print(len(breathingrate_list))
+            # creates a count used to write into the new csv and writes the firstline containing the header then writes the other lines, closes the final csv and removes temporary csv
+            count = (len(heartrate_list) - 1)
+            for item in firstline:
+                csvfile.write(item+"; ")
             csvfile.write("\n")
-    os.remove(workingdir + r"\firstcsv.csv")
+            finallist = []
+            count = 0
+            for item in time_list:
+                finallist.append(item + "; " + heartrate_list[count] + "; " + breathingrate_list[count])
+                count += 1
+            finallist = sorted(finallist)
+            for item in finallist:
+                csvfile.write(item)
+                csvfile.write("\n")
+        os.remove(workingdir + r"\firstcsv.csv")
 
-    print("DONE")
+        print("DONE")
+    except:
+        print(f"There was an issue processing the PDF File \nEnsure that only the relevant PDF Files are contained in the given directory as other PDFs prevent the Program from functioning as intended")
+        print("The program will exit now")
+        sleep(10)
+        exit()
 
-def dateadder(time_temp): #adds the date to the time_list
+def dateadder(time_temp) -> None: #adds the date to the time_list
     time_temp = date[0:10] + "_" + time_temp +":00"
     time_list_temp.append(time_temp)
 
-def linedeterminer(line): #determines whether the line input contains Heartfrequency, starting time and date, Breathing Frequency, Time, or is otherwise unimporant
+def linedeterminer(line) -> str: #determines whether the line input contains Heartfrequency, starting time and date, Breathing Frequency, Time, or is otherwise unimporant
     if "Start" in line[0]  or "tart" in line[0]:
         return "Startzeit line"
     if ":" in (line[0] or line[1] or line[2] or line[3]) and "Start" not in line[0]:
@@ -105,7 +112,7 @@ def linedeterminer(line): #determines whether the line input contains Heartfrequ
     else:
         return "Unimportant line"
 
-def time_list_appender(line): #Appends the global time_list with the times from the input line
+def time_list_appender(line) -> None: #Appends the global time_list with the times from the input line
     #creates a temporary list into which the contents of the input line is read into and then appends the global time_list with the temporary list created from the line
     global time_list_temp
     time_list_temp = []
@@ -126,7 +133,7 @@ def time_list_appender(line): #Appends the global time_list with the times from 
     for item in time_list_temp:
         time_list.append(item)
 
-def heartrate_list_appender(line): #Appends the global heartrate_list with the times from the input line
+def heartrate_list_appender(line) -> None: #Appends the global heartrate_list with the times from the input line
     #creates a temporary list into which the contents of the input line is read into and then appends the global heartrate_list with the temporary list created from the line
     line = line[1:] #The first entry in the line is removed as it contains "HF", marking it as a heartfrequency line
     heartrate_list_temp = []
@@ -148,7 +155,7 @@ def heartrate_list_appender(line): #Appends the global heartrate_list with the t
     for item in heartrate_list_temp:
         heartrate_list.append(item)
 
-def breathingrate_list_appender(line): #Appends the global breathingrate_list with the times from the input line
+def breathingrate_list_appender(line) -> None: #Appends the global breathingrate_list with the times from the input line
     #creates a temporary list into which the contents of the input line is read into and then appends the global breathingrate_list with the temporary list created from the line
     line = line[1:] #The first entry in the line is removed as it contains "AF", marking it as a breathingfrequency line
     breathingrate_list_temp = []
@@ -177,7 +184,7 @@ def firstnumberfinder(string): #Returns the position of the first number in a st
             return count
         count += 1
 
-def startzeit_rememberer(line): #Saves the date from a "Startzeit" line into the global date variable
+def startzeit_rememberer(line) -> None: #Saves the date from a "Startzeit" line into the global date variable
     #creates a long string out of all the list entries in a line, finds the first number and uses this number in order to save the date which is of fixed length
     # (the reason for this convulted approach is for redundancy sake in the case that the pdf is misread or items are misread)
     global startzeitstring
@@ -193,7 +200,7 @@ def startzeit_rememberer(line): #Saves the date from a "Startzeit" line into the
     date = date[6:10] + "-" + date[3:5] + "-" + date[0:2] + "-" + date[11: ]
     datelist.append(date)
 
-def num_there(s): #Returns True is there are numbers in a given string
+def num_there(s) -> bool: #Returns True is there are numbers in a given string
     return any(i.isdigit() for i in s)
 
 def questionmark_finder(phrase): #returns true if there is a questionmark (?) in a given string
@@ -201,7 +208,7 @@ def questionmark_finder(phrase): #returns true if there is a questionmark (?) in
         if i == "?" or '?':
             return True
 
-def patient_number_entry(): #creates a GUI that asks the user to enter the Patientnumber, this number is used and saved into the title of the final converted CSV into a global variable (patientnumbersaved)
+def patient_number_entry() -> None: #creates a GUI that asks the user to enter the Patientnumber, this number is used and saved into the title of the final converted CSV into a global variable (patientnumbersaved)
     #(the reason for the GUI not returning the value and instead saving to a global variable, as with a lot of functions on this program is that it creates problems with the way Tkinter works, resulting
     # in the program being stuck in a loop (this can probably be fixed))
 
@@ -244,7 +251,7 @@ def patient_number_entry(): #creates a GUI that asks the user to enter the Patie
     #starts the mainloop of the window
     frame.mainloop()
 
-def pdfFinderGUI(): #Lets the user select the PDF and saves its location into the global variable "pdfdir" and the name into the global variable "pdffilename"
+def pdfFinderGUI() -> None: #Lets the user select the PDF and saves its location into the global variable "pdfdir" and the name into the global variable "pdffilename"
     Tk().withdraw()
     pdfdirectory = askdirectory(title="Bitte wählen sie den Ordner mit den Dateien aus die sie Konvertieren möchten")
     global pdffilelist
@@ -254,14 +261,23 @@ def pdfFinderGUI(): #Lets the user select the PDF and saves its location into th
     for item in pdffilelist:
         if "pdf" in item:
             pdfdirlist.append(os.path.join(pdfdirectory.replace("/", ("\\")), item))
+    if len(pdfdirlist) == 0:
+        print(f"No PDF Files found in the specified directory: {pdfdirectory} please specify the correct directory")
+        sleep(5)
+        pdfFinderGUI()
 
-def targetfolderGUI(): #Lets the user select the target folder of the Final Saved CSV and saves it in the global variable "targetdir"
+def targetfolderGUI() -> None: #Lets the user select the target folder of the Final Saved CSV and saves it in the global variable "targetdir"
     Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
     filename = askdirectory(title= "Bitte wählen sie den Ort wo die Konvertierte Datei Gespeichert werden soll") # show an "Open" dialog box and return the path to the selected file
     global targetdir
-    targetdir = filename.replace(os.path.sep, ('\\')) #saves the target directory, replacing the default returned seperator with "\\" to ensure proper interpreting by other modules
+    try:
+        targetdir = filename.replace(os.path.sep, ('\\')) #saves the target directory, replacing the default returned seperator with "\\" to ensure proper interpreting by other modules
+    except:
+        print(f"Error occured while getting directory {filename} \nThe program will now close")
+        sleep(10)
+        exit()
 
-def explainerGUI(): #Tells the User what has happened outputting when the PDF has been succesfully converted and telling the user which PDF was converted and where it was saved to
+def explainerGUI() -> None: #Tells the User what has happened outputting when the PDF has been succesfully converted and telling the user which PDF was converted and where it was saved to
     #cretes the toplevel frame
     topframe = Toplevel()
     topframe.title = ("Datei Erfolgreich Konvertiert")
@@ -272,7 +288,7 @@ def explainerGUI(): #Tells the User what has happened outputting when the PDF ha
     topframe.rowconfigure(0, weight=1)
     #adds labels which tell the user important info listed above
     ttk.Label(mainframe, text="Datei Erfolgreich Konvertiert").grid(column=2, row=1, sticky=(N))
-    ttk.Label(mainframe, text=f"""Die Datei oder Dateien wurden erfolgreich konvertiert und unter "{targetdir}" gespeichert""").grid(column=2,row=2, sticky=(N))
+    ttk.Label(mainframe, text=f"Die Datei oder Dateien wurden erfolgreich konvertiert und unter {targetdir} gespeichert").grid(column=2,row=2, sticky=(N))
     #defines the ok function which destorys the window and quits the mainloop
     def ok(*args):
         topframe.destroy()
@@ -286,7 +302,6 @@ def explainerGUI(): #Tells the User what has happened outputting when the PDF ha
 
     # starts the mainloop
     topframe.mainloop()
-print("Hello world")
 pdfFinderGUI()
 patient_number_entry()
 targetfolderGUI()
